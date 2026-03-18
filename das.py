@@ -1,6 +1,11 @@
 import sys
+import os
 
-sys.path.append("/users/mlepori/data/mlepori/projects/relational-circuits/pyvene")
+repo_root = os.path.dirname(__file__)
+# Prepend repo root and the `pyvene` subdirectory to sys.path so they take
+# precedence over other installed packages.
+sys.path.insert(0, repo_root)
+sys.path.insert(0, os.path.join(repo_root, "pyvene"))
 
 import torch
 from tqdm import tqdm, trange
@@ -38,7 +43,8 @@ class DasDataset(Dataset):
     ):
         self.root_dir = root_dir
         self.im_dict = pkl.load(open(os.path.join(root_dir, "datadict.pkl"), "rb"))
-        self.image_sets = glob.glob(root_dir + "*set*")
+        # keep only folders that have an entry in datadict
+        self.image_sets = [p for p in glob.glob(root_dir + "*set*") if os.path.basename(p) in self.im_dict]
         self.image_processor = image_processor
         self.num_patches = num_patches
         self.device = device

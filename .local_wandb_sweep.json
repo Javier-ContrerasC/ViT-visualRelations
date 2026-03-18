@@ -1,0 +1,114 @@
+{
+  "project": "relational-circuits-mikey",
+  "entity": "michael_lepori",
+  "sweep": {
+    "method": "grid",
+    "program": "train.py",
+    "command": [
+      "${env}",
+      "${interpreter}",
+      "${program}",
+      "--auxiliary_loss",
+      "${args}"
+    ],
+    "name": "From Scratch ViT-B/16 (32x32 NOISE_RGB Stimuli) Aux Loss",
+    "parameters": {
+      "dataset_str": {
+        "values": [
+          "NOISE_RGB"
+        ]
+      },
+      "lr": {
+        "values": [
+          1e-06
+        ]
+      },
+      "lr_scheduler": {
+        "values": [
+          "exponential"
+        ]
+      },
+      "n_val": {
+        "values": [
+          6400
+        ]
+      },
+      "n_test": {
+        "values": [
+          6400
+        ]
+      },
+      "patch_size": {
+        "values": [
+          16
+        ]
+      },
+      "obj_size": {
+        "values": [
+          32
+        ]
+      },
+      "num_epochs": {
+        "values": [
+          200
+        ]
+      },
+      "wandb_proj": {
+        "values": [
+          "relational-circuits-mikey"
+        ]
+      },
+      "wandb_entity": {
+        "values": [
+          "michael_lepori"
+        ]
+      },
+      "wandb_cache_dir": {
+        "values": [
+          "../.cache"
+        ]
+      },
+      "num_gpus": {
+        "values": [
+          1
+        ]
+      },
+      "model_type": {
+        "values": [
+          "vit"
+        ]
+      },
+      "batch_size": {
+        "values": [
+          64
+        ]
+      },
+      "probe_layer": {
+        "values": [
+          -1
+        ]
+      },
+      "compositional": {
+        "values": [
+          -1,
+          32
+        ]
+      },
+      "pretrain_path": {
+        "values": [
+          ""
+        ]
+      },
+      "attn_layer": {
+        "values": [
+          null
+        ]
+      },
+      "n_attn_head": {
+        "values": [
+          0
+        ]
+      }
+    }
+  }
+}

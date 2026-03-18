@@ -80,7 +80,7 @@ def load_model_from_path(
         # so we shouldn't have one either
         model.visual_projection = nn.Linear(in_features, 2, bias=False)
 
-    elif model_type == "dinov2_vit":
+    elif "dinov2" in model_type:
         hf_path = "facebook/dinov2-base"
         model = Dinov2ForImageClassification.from_pretrained(
             hf_path,
@@ -281,7 +281,8 @@ def load_model_for_training(
                     label2id=label_to_int,
                 )
             else:
-                configuration = CLIPConfig(patch_size=patch_size, im_size=im_size)
+                # Use the vision-specific CLIP config so `hidden_size` is available
+                configuration = CLIPVisionConfig(patch_size=patch_size, image_size=im_size)
                 model = CLIPVisionModelWithProjection(configuration)
 
             # Replace projection with correct dimensions
