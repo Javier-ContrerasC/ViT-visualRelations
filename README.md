@@ -24,3 +24,10 @@ Graphing files are found in `analysis`
 ## Dependencies
 
 This repository requires using our local copy of Pyvene, which is included here.  Additionally, you must use our fork of Transformer_lens, found here: `https://github.com/mlepori1/TransformerLens.git`.
+
+---
+
+### Otros
+
+Para la instalación del entorno virtual es importante recordar que las versiones a utilizar de cuda+torch son dependientes del hardware (GPU) a utilizar.
+

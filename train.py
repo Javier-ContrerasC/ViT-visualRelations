@@ -1223,11 +1223,23 @@ if __name__ == "__main__":
         patch_str = ""
 
     comp_str = f"{args.n_train_tokens}-{args.n_val_tokens}-{args.n_test_tokens}"
-    data_dir = os.path.join(
+    data_dir_legacy = os.path.join(
         f"stimuli{patch_str}",
         dataset_str,
         f"aligned/N_{obj_size}/trainsize_{n_train}_{comp_str}",
     )
+    data_dir_generated = os.path.join(
+        "stimuli",
+        dataset_str,
+        f"aligned/b{patch_size}/N_{obj_size}/trainsize_{n_train}_{comp_str}",
+    )
+
+    if os.path.exists(data_dir_legacy):
+        data_dir = data_dir_legacy
+    elif os.path.exists(data_dir_generated):
+        data_dir = data_dir_generated
+    else:
+        data_dir = data_dir_legacy
 
     if model_type == "vit":
         if pretrained:

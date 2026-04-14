@@ -27,28 +27,38 @@ label_to_int = {
 }
 
 color_combos = [
-    ["233-30-99", "136-14-79"],
-    ["156-39-176", "74-20-140"],
-    ["103-58-183", "49-27-146"],
-    ["63-81-181", "26-35-126"],
-    ["3-169-244", "1-87-155"],
-    ["0-188-212", "0-96-100"],
-    ["0-150-136", "0-77-64"],
-    ["76-175-80", "27-94-32"],
-    ["139-195-74", "51-105-30"],
-    ["205-220-57", "130-119-23"],
-    ["255-235-59", "245-127-23"],
-    ["255-152-0", "230-81-0"],
-    ["255-87-34", "191-54-12"],
-    ["121-85-72", "62-39-35"],
-    ["158-158-158", "33-33-33"],
-    ["120-144-156", "38-50-56"],
+    ["128-128-128", "110-110-110"],
 ]
-color_to_int = {f"mean{color_combos[i][0]}_var10": i for i in range(len(color_combos))}
-ood_colors = ["103-110-0", "255-155-238", "145-0-0", "194-188-255"]
-for c in range(len(ood_colors)):  # ood colors
-    col = ood_colors[c]
-    color_to_int[f"mean{col}_var10"] = c + len(color_combos)
+SCALE_VARIATIONS = [8, 10, 12, 14]
+GEOMETRIC_SCALE_FACTORS = {
+    "var8": 0.70,
+    "var10": 0.80,
+    "var12": 0.90,
+    "var14": 1.00,
+}
+NUM_SHAPES = 16
+NUM_SCALE_VARIATIONS = len(SCALE_VARIATIONS)
+TOTAL_OBJECT_TOKENS = NUM_SHAPES * NUM_SCALE_VARIATIONS
+
+color_to_int = {
+    f"mean{color_combos[0][0]}": 0,
+    f"mean{color_combos[0][0]}_var10": 0,
+}
+scale_to_int = {f"var{SCALE_VARIATIONS[i]}": i for i in range(NUM_SCALE_VARIATIONS)}
+
+
+def extract_scale_key(value):
+    for token in value.split("_"):
+        if token.startswith("var"):
+            return token.split(".")[0]
+    raise ValueError(f"Could not parse scale from value: {value}")
+
+
+def scale_key_to_factor(scale_key):
+    """Map discrete scale tokens to geometric resize factors."""
+    if scale_key in GEOMETRIC_SCALE_FACTORS:
+        return GEOMETRIC_SCALE_FACTORS[scale_key]
+    raise ValueError(f"Unrecognized scale key: {scale_key}")
 
 class AttnMapGenerator:
     def __init__(
@@ -259,6 +269,39 @@ def coord_to_token(coords, all_patches):
     return tokens
 
 
+def bbox_to_tokens(bbox, patch_size, all_patches):
+    """Convert an (x0, y0, x1, y1) bbox into covered ViT token indices."""
+    x0, y0, x1, y1 = bbox
+
+    col_start = int(np.floor(x0 / patch_size))
+    col_end = int(np.floor((max(x1 - 1, x0)) / patch_size))
+    row_start = int(np.floor(y0 / patch_size))
+    row_end = int(np.floor((max(y1 - 1, y0)) / patch_size))
+
+    tokens = []
+    for row in range(row_start, row_end + 1):
+        for col in range(col_start, col_end + 1):
+            token_coord = (row * patch_size, col * patch_size)
+            if token_coord in all_patches:
+                tokens.append(all_patches.index(token_coord))
+
+    return tokens
+
+
+def object_to_effective_bbox(obj_name, paste_box, rendered_size):
+    """Return effective non-background bbox after geometric scaling and centering."""
+    scale_factor = scale_key_to_factor(extract_scale_key(obj_name))
+    content_size = max(1, int(round(rendered_size * scale_factor)))
+    margin = (rendered_size - content_size) / 2.0
+
+    x0 = paste_box[0] + margin
+    y0 = paste_box[1] + margin
+    x1 = x0 + content_size
+    y1 = y0 + content_size
+
+    return (x0, y0, x1, y1)
+
+
 def load_dataset(root_dir, subset=None, task="discrimination", size=-1):
     """Helper function to load image datasets"""
     if not os.path.isdir(root_dir):
@@ -309,13 +352,17 @@ def load_dataset(root_dir, subset=None, task="discrimination", size=-1):
                     "shape_2": data_dictionary[dict_key]["s2"],
                     "display_shape_1": data_dictionary[dict_key]["display1-s"],
                     "display_shape_2": data_dictionary[dict_key]["display2-s"],
-                    "color_1": color_to_int[data_dictionary[dict_key]["c1"]],
-                    "color_2": color_to_int[data_dictionary[dict_key]["c2"]],
-                    "display_color_1": color_to_int[
-                        data_dictionary[dict_key]["display1-c"]
+                    "color_1": scale_to_int[
+                        extract_scale_key(data_dictionary[dict_key]["c1"])
                     ],
-                    "display_color_2": color_to_int[
-                        data_dictionary[dict_key]["display2-c"]
+                    "color_2": scale_to_int[
+                        extract_scale_key(data_dictionary[dict_key]["c2"])
+                    ],
+                    "display_color_1": scale_to_int[
+                        extract_scale_key(data_dictionary[dict_key]["display1-c"])
+                    ],
+                    "display_color_2": scale_to_int[
+                        extract_scale_key(data_dictionary[dict_key]["display2-c"])
                     ],
                 }
             elif task == "discrimination":
@@ -328,8 +375,12 @@ def load_dataset(root_dir, subset=None, task="discrimination", size=-1):
                     "stream_2": [i + 1 for i in data_dictionary[dict_key]["pos2"]],
                     "shape_1": data_dictionary[dict_key]["s1"],
                     "shape_2": data_dictionary[dict_key]["s2"],
-                    "color_1": color_to_int[data_dictionary[dict_key]["c1"]],
-                    "color_2": color_to_int[data_dictionary[dict_key]["c2"]],
+                    "color_1": scale_to_int[
+                        extract_scale_key(data_dictionary[dict_key]["c1"])
+                    ],
+                    "color_2": scale_to_int[
+                        extract_scale_key(data_dictionary[dict_key]["c2"])
+                    ],
                 }
 
             ims[idx] = im_dict
@@ -418,7 +469,7 @@ class ProbeDataset(Dataset):
                     ][self.probe_layer]
 
                     # Second, establish the label for each object
-                    if self.probe_value == "color":
+                    if self.probe_value in ["color", "scale"]:
                         label_1 = color_1
                         label_2 = color_2
                         display_label_1 = display_color_1
@@ -489,7 +540,7 @@ class ProbeDataset(Dataset):
                     ]
             if self.task == "discrimination":
                 # The discrimination case is simpler, as there are no intermediate judgements to be made
-                if self.probe_value == "color":
+                if self.probe_value in ["color", "scale"]:
                     label_1 = color_1
                     label_2 = color_2
                 elif self.probe_value == "shape":
@@ -687,18 +738,20 @@ class SameDifferentDataset(Dataset):
 
 
 def create_noise_image(o, im, texture=False, fuzziness=0):
-    """Creates an image that is just Gaussian Noise with particular sigmas and mus
+    """Creates deterministic object colors from encoded means/texture.
 
-    :param o: Object filename defining sigma and mu
+    :param o: Object filename defining mean color and discrete scale token
     :param im: an image object
     :param texture: use texture to generate colors
     """
 
-    color1 = o.split("_")[1].replace("mean", "")
+    color_key = o.split("_")[1]
+    color1 = color_key.replace("mean", "")
     if texture:
-        color2 = color_combos[color_to_int[color1]][-1]
+        texture_idx = color_to_int.get(color_key, 0)
+        color2 = color_combos[texture_idx][-1]
         texture_pixels = Image.open(
-            f"stimuli/source/textures/texture{color_to_int[color1]}.png"
+            f"stimuli/source/textures/texture{texture_idx}.png"
         ).convert("1")
 
         x, y = np.random.randint(
@@ -717,8 +770,6 @@ def create_noise_image(o, im, texture=False, fuzziness=0):
         [int(color1.split("-")[i]) for i in range(3)],
         [int(color2.split("-")[i]) for i in range(3)],
     ]
-    sigma = int(o.split("_")[-1][:-4].replace("var", ""))
-
     data = im.getdata()
     new_data = []
     idx = 0
@@ -735,16 +786,7 @@ def create_noise_image(o, im, texture=False, fuzziness=0):
 
             color_choice = np.random.binomial(1, p)
 
-            noise = np.zeros(3, dtype=np.uint8)
-            for i in range(3):
-                noise[i] = (
-                    np.random.normal(loc=mu[color_choice][i], scale=sigma, size=(1))
-                    .clip(min=0, max=250)
-                    .astype(np.uint8)
-                    .item()
-                )
-
-            new_data.append(tuple(noise))
+            new_data.append(tuple(mu[color_choice]))
         idx += 1
 
     im.putdata(new_data)
@@ -1230,8 +1272,9 @@ def create_stimuli(
                     ]
 
                     # Sample noise
-                    create_noise_image(obj1, object_ims[0], texture=texture)
-                    create_noise_image(obj2, object_ims[1], texture=texture)
+                    if texture:
+                        create_noise_image(obj1, object_ims[0], texture=texture)
+                        create_noise_image(obj2, object_ims[1], texture=texture)
 
                     obj1_props = obj1[:-4].split("_")  # List of shape, color
                     obj2_props = obj2[:-4].split("_")  # List of shape, color
@@ -1245,19 +1288,8 @@ def create_stimuli(
                         f"{obj2_props[1]}_{obj2_props[2]}",
                     ]
 
-                    datadict[f"{condition}/{sd_class}/{stim_idx}.png"] = {
-                        "sd-label": label_to_int[sd_class],
-                        "pos1": coord_to_token(
-                            p[0], all_patches
-                        ),  # possible_coords.index((p[0][1], p[0][0])),  # TODO: FIX
-                        "c1": obj1_props[1],
-                        "s1": obj1_props[0].split("-")[0],
-                        "pos2": coord_to_token(
-                            p[1], all_patches
-                        ),  # possible_coords.index((p[1][1], p[1][0])),  # TODO: FIX
-                        "c2": obj2_props[1],
-                        "s2": obj2_props[0].split("-")[0],
-                    }
+                    object_names = [obj1, obj2]
+                    object_props = [obj1_props, obj2_props]
 
                     # Get display objects for match to sample
                     if match_to_sample:
@@ -1269,8 +1301,9 @@ def create_stimuli(
                         object_ims.append(object_ims_all[display2].copy())
 
                         # Sample noise
-                        create_noise_image(display1, object_ims[2], texture=texture)
-                        create_noise_image(display2, object_ims[3], texture=texture)
+                        if texture:
+                            create_noise_image(display1, object_ims[2], texture=texture)
+                            create_noise_image(display2, object_ims[3], texture=texture)
 
                         display1_props = display1[:-4].split(
                             "_"
@@ -1287,33 +1320,12 @@ def create_stimuli(
                             display2_props[0],
                             f"{display2_props[1]}_{display2_props[2]}",
                         ]
-
-                        # Add display data to datadict
-                        datadict[f"{condition}/{sd_class}/{stim_idx}.png"][
-                            "display1-pos"
-                        ] = coord_to_token(
-                            display_coords[0], all_patches
-                        )  # TODO: FIX
-                        datadict[f"{condition}/{sd_class}/{stim_idx}.png"][
-                            "display2-pos"
-                        ] = coord_to_token(
-                            display_coords[1], all_patches
-                        )  # TODO: FIX
-                        datadict[f"{condition}/{sd_class}/{stim_idx}.png"][
-                            "display1-c"
-                        ] = display1_props[1]
-                        datadict[f"{condition}/{sd_class}/{stim_idx}.png"][
-                            "display2-c"
-                        ] = display2_props[1]
-                        datadict[f"{condition}/{sd_class}/{stim_idx}.png"][
-                            "display1-s"
-                        ] = display1_props[0].split("-")[0]
-                        datadict[f"{condition}/{sd_class}/{stim_idx}.png"][
-                            "display2-s"
-                        ] = display2_props[0].split("-")[0]
+                        object_names += [display1, display2]
+                        object_props += [display1_props, display2_props]
 
                     # Create blank image and paste objects
                     base = Image.new("RGB", (im_size, im_size), (255, 255, 255))
+                    pasted_boxes = []
 
                     for c in range(len(p)):
                         box = [
@@ -1321,6 +1333,41 @@ def create_stimuli(
                             for coord in p[c][0]
                         ]
                         base.paste(object_ims[c], box=box)
+                        pasted_boxes.append(box)
+
+                    token_positions = []
+                    for c, obj_name in enumerate(object_names):
+                        bbox = object_to_effective_bbox(
+                            obj_name,
+                            pasted_boxes[c],
+                            object_ims[c].size[0],
+                        )
+                        token_positions.append(
+                            bbox_to_tokens(
+                                bbox,
+                                patch_size=patch_size,
+                                all_patches=all_patches,
+                            )
+                        )
+
+                    image_key = f"{condition}/{sd_class}/{stim_idx}.png"
+                    datadict[image_key] = {
+                        "sd-label": label_to_int[sd_class],
+                        "pos1": token_positions[0],
+                        "c1": object_props[0][1],
+                        "s1": object_props[0][0].split("-")[0],
+                        "pos2": token_positions[1],
+                        "c2": object_props[1][1],
+                        "s2": object_props[1][0].split("-")[0],
+                    }
+
+                    if match_to_sample:
+                        datadict[image_key]["display1-pos"] = token_positions[2]
+                        datadict[image_key]["display2-pos"] = token_positions[3]
+                        datadict[image_key]["display1-c"] = object_props[2][1]
+                        datadict[image_key]["display2-c"] = object_props[3][1]
+                        datadict[image_key]["display1-s"] = object_props[2][0].split("-")[0]
+                        datadict[image_key]["display2-s"] = object_props[3][0].split("-")[0]
 
                     base.save(f"{setting}/{stim_idx}.png", quality=100)
                 stim_idx += 1
@@ -1405,9 +1452,12 @@ def call_create_stimuli(
         # possible shapes to match with each color; this then ensures that all
         # unique shapes & colors are represented in the training/test data, but that
         # only some combinations of them are seen during training.
-        proportion_test = int(16 * (256 - compositional) / 256)
+        proportion_test = int(
+            NUM_SHAPES * (TOTAL_OBJECT_TOKENS - compositional) / TOTAL_OBJECT_TOKENS
+        )
         sliding_idx = [
-            [(j + i) % 16 for j in range(proportion_test)] for i in range(16)
+            [(j + i) % NUM_SHAPES for j in range(proportion_test)]
+            for i in range(NUM_SHAPES)
         ]
 
         object_files_train = []
@@ -1415,7 +1465,7 @@ def call_create_stimuli(
         object_files_test = []
 
         for c in range(len(colors)):
-            train_idx = set(range(16)) - set(sliding_idx[c])
+            train_idx = set(range(NUM_SHAPES)) - set(sliding_idx[c])
             val_idx = train_idx
             test_idx = sliding_idx[c]
 
@@ -1539,18 +1589,20 @@ def create_source(
     source,
     obj_size=32,
 ):
-    """Creates and saves NOISE objects. Objects are created by stamping out colors/textures
-    with shape outlines and saved in the directory labeled by obj_size.
+    """Creates and saves deterministic source objects.
+
+    The color value is fixed by the encoded mean in the filename.
+    The discrete "var" token is reused as a geometric scale class.
     """
 
-    variances = [10]
+    variances = SCALE_VARIATIONS
     iid_means = [m[0] for m in color_combos]
     iid_colors = list(itertools.product(iid_means, variances))
     iid_shape_masks = [f"stimuli/source/shapemasks/{i}.png" for i in range(16)]
     settings = [source]
 
     if "ood" in source:
-        ood_means = ["103-110-0", "255-155-238", "145-0-0", "194-188-255"]
+        ood_means = [color_combos[0][0]]
         ood_colors = list(itertools.product(ood_means, variances))
         ood_shape_masks = [
             f"stimuli/source/shapemasks/{i}.png" for i in [16, 17, 18, 19]
@@ -1575,6 +1627,10 @@ def create_source(
 
         for color_file in colors:
             color_name = f"mean{color_file[0]}_var{color_file[1]}"
+            scale_factor = scale_key_to_factor(f"var{color_file[1]}")
+            scaled_size = max(1, int(round(obj_size * scale_factor)))
+            scaled_size = min(obj_size, scaled_size)
+            mean_color = tuple(int(v) for v in color_file[0].split("-"))
 
             for shape_file in shape_masks:
                 shape_name = shape_file.split("/")[-1][:-4]
@@ -1583,7 +1639,7 @@ def create_source(
                 mask = (
                     Image.open(shape_file)
                     .convert("RGBA")
-                    .resize((obj_size, obj_size), Image.NEAREST)
+                    .resize((scaled_size, scaled_size), Image.NEAREST)
                 )
 
                 # Remove mask background
@@ -1596,30 +1652,16 @@ def create_source(
                         new_data.append((0, 0, 0, 0))
                 mask.putdata(new_data)
 
-                # Attain a randomly selected patch of color/texture
-                noise = np.zeros((224, 224, 3), dtype=np.uint8)
-
-                for i in range(3):
-                    noise[:, :, i] = (
-                        np.random.normal(
-                            loc=int(color_file[0].split("-")[i]),
-                            scale=color_file[1],
-                            size=(224, 224),
-                        )
-                        .clip(min=0, max=250)
-                        .astype(np.uint8)
-                    )
-
-                color = Image.fromarray(noise, "RGB")
-
-                bound = color.size[0] - mask.size[0]
-                x = random.randint(0, bound)
-                y = random.randint(0, bound)
-                color = color.crop((x, y, x + mask.size[0], y + mask.size[0]))
+                # Use a fixed RGB color for each object.
+                color = Image.new("RGB", (scaled_size, scaled_size), mean_color)
+                offset = (
+                    (obj_size - scaled_size) // 2,
+                    (obj_size - scaled_size) // 2,
+                )
 
                 # Place mask over color/texture
-                base = Image.new("RGBA", mask.size, (255, 255, 255, 0))
-                base.paste(color, mask=mask.split()[3])
+                base = Image.new("RGBA", (obj_size, obj_size), (255, 255, 255, 0))
+                base.paste(color, box=offset, mask=mask.split()[3])
 
                 base.convert("RGB").save(f"{stim_dir}/{shape_name}_{color_name}.png")
 
@@ -1637,7 +1679,6 @@ def create_object(shape, color, position, coords, obj_size, buffer_factor):
         ),
         Image.NEAREST,
     )
-    create_noise_image(path, im)
     box = [coord + random.randint(0, obj_size // buffer_factor) for coord in [x, y]]
     return im, box
 
@@ -1774,10 +1815,10 @@ def create_discrimination_das_datasets(
 
     if compositional > 0:
         train_str = (
-            f"trainsize_6400_{compositional}-{compositional}-{256 - compositional}"
+            f"trainsize_6400_{compositional}-{compositional}-{TOTAL_OBJECT_TOKENS - compositional}"
         )
     else:
-        train_str = "trainsize_6400_256-256-256"
+        train_str = f"trainsize_6400_{TOTAL_OBJECT_TOKENS}-{TOTAL_OBJECT_TOKENS}-{TOTAL_OBJECT_TOKENS}"
 
     # The path to the dataset that we wil generate
     das_imgs_path = os.path.join(
@@ -2056,10 +2097,10 @@ def create_rmts_das_datasets(
 
     if compositional > 0:
         train_str = (
-            f"trainsize_6400_{compositional}-{compositional}-{256 - compositional}"
+            f"trainsize_6400_{compositional}-{compositional}-{TOTAL_OBJECT_TOKENS - compositional}"
         )
     else:
-        train_str = "trainsize_6400_256-256-256"
+        train_str = f"trainsize_6400_{TOTAL_OBJECT_TOKENS}-{TOTAL_OBJECT_TOKENS}-{TOTAL_OBJECT_TOKENS}"
 
     # This is the path to the dataset that we will generate
     das_imgs_path = os.path.join(
@@ -2374,7 +2415,7 @@ if __name__ == "__main__":
         if args.compositional > 0:
             args.n_train_tokens = args.compositional
             args.n_val_tokens = args.compositional
-            args.n_test_tokens = 256 - args.compositional
+            args.n_test_tokens = TOTAL_OBJECT_TOKENS - args.compositional
 
         if "ood-color" in args.source or "ood-shape" in args.source:
             args.n_train_tokens = 64

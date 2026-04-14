@@ -23,6 +23,14 @@ python data.py --source mts --patch_size 16 --obj_size 32 --n_train 6400 --match
 python data.py --source mts --patch_size 16 --obj_size 32 --n_train 6400 --match_to_sample --compositional 32
 ```
 
+### Test iid
+```bash
+python data.py --patch_size 16 --obj_size 32 --n_train 6400 --create_held_out_test_set
+
+python data.py --source mts --patch_size 16 --obj_size 32 --n_train 6400 --match_to_sample --create_held_out_test_set
+```
+
+
 ### DAS counterfactual dataset
 ```bash
 # Discrimination (shape + color, para compositional -1 y 32)
@@ -303,3 +311,52 @@ python linear_probe_intervention.py --pretrain imagenet --run_id l2cgg62f \
 ### 5. Run_id no encontrado
 - **Problema:** El archivo de checkpoint no existe en la ruta esperada
 - **Solución:** Verifica el nombre exacto en results.csv y ajusta la llamada
+
+# Flujo a mantener y considerar
+
+Perfecto. Aquí va la mini guía corta para no desalinear rutas entre data, train, DAS y linear probe.
+
+**Regla de oro**
+1. Mantén idénticos estos campos en todas las etapas: dataset/task, patch_size, obj_size, compositional.
+2. El run_id de DAS/linear probe debe venir del entrenamiento hecho con esos mismos valores.
+3. Si usas RMTS, usa siempre match_to_sample en generación de datos.
+
+**Valores por escenario**
+1. No-compositional:
+- compositional = -1
+- Equivale a 256-256-256
+2. Compositional-32:
+- compositional = 32
+- Equivale a 32-32-224
+
+**Pipeline consistente (Discrimination)**
+1. Data:
+- python data.py --patch_size 16 --obj_size 32 --n_train 6400 --compositional X
+2. Train:
+- python train.py --dataset_str NOISE_RGB --patch_size 16 --obj_size 32 --compositional X ...
+3. DAS:
+- python das.py --task discrimination --patch_size 16 --obj_size 32 --compositional X --run_id <run_id_correcto> ...
+
+**Pipeline consistente (RMTS)**
+1. Data:
+- python data.py --source mts --patch_size 16 --obj_size 32 --n_train 6400 --match_to_sample --compositional X
+2. Train:
+- python train.py --dataset_str mts --patch_size 16 --obj_size 32 --compositional X ...
+3. DAS:
+- python das.py --task rmts -ds mts --patch_size 16 --obj_size 32 --compositional X --run_id <run_id_correcto> ...
+4. Linear probe:
+- python linear_probe_intervention.py --patch_size 16 --obj_size 32 --compositional X --run_id <run_id_correcto> ...
+
+Donde X es -1 o 32, pero siempre el mismo en toda la cadena.
+
+**Para DINOv2**
+1. Usa patch_size 14 y obj_size 28 en todas las etapas.
+2. No mezclar con checkpoints/datasets b16 (16/32).
+
+**Chequeo rápido antes de correr DAS/Probe**
+1. ¿El run_id viene de ese mismo dataset/task/compositional?
+2. ¿patch_size y obj_size coinciden con el checkpoint?
+3. ¿Para RMTS usaste match_to_sample en data?
+4. ¿Existe el split que vas a evaluar (test_iid solo si lo generaste)?
+
+Si quieres, te preparo un bloque de comandos “copiar y pegar” para dos rutas completas: RMTS no-compositional y RMTS compositional-32.
