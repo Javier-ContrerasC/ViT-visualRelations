@@ -799,69 +799,43 @@ def generate_different_matches(objects, n):
     :param n: number of examples
     :return: dictionary mapping object file to a list of candidate matches
     """
-    # Select object pairs
+    # Generate all three pair types so auxiliary directories are populated:
+    # type 0: different shape + different scale
+    # type 1: different shape + same scale
+    # type 2: same shape + different scale
+    # Sampling with replacement guarantees exactly n // 2 pairs.
     pairs_per_obj = {o: [] for o in objects}
-    n_total_pairs = 0
+    target_pairs = n // 2
 
-    # Get "different" matches, splitting evenly among the three/four conditions
-    different_type = 0
-    while n_total_pairs < n // 2:
-        # Start with one object
-        for o in objects:
-            shape = o.split("_")[0].split("-")[0]
-            color = f"{o.split('_')[1]}_{o.split('_')[2][:-4]}"
+    pair_options = {0: [], 1: [], 2: []}
 
-            # Find its possible matches
-            if different_type == 0:  # totally different
-                possible_matches = [
-                    o2
-                    for o2 in objects
-                    if (
-                        o2.split("_")[0].split("-")[0] != shape
-                        and f"{o2.split('_')[1]}_{o2.split('_')[2][:-4]}" != color
-                    )
-                ]
-            elif different_type == 1:  # different shape
-                possible_matches = [
-                    o2
-                    for o2 in objects
-                    if (
-                        o2.split("_")[0].split("-")[0] != shape
-                        and f"{o2.split('_')[1]}_{o2.split('_')[2][:-4]}" == color
-                    )
-                ]
-            elif different_type == 2:  # different color
-                possible_matches = [
-                    o2
-                    for o2 in objects
-                    if (
-                        o2.split("_")[0].split("-")[0] == shape
-                        and f"{o2.split('_')[1]}_{o2.split('_')[2][:-4]}" != color
-                    )
-                ]
-                different_type = -1
+    for o in objects:
+        shape = o.split("_")[0].split("-")[0]
+        color = f"{o.split('_')[1]}_{o.split('_')[2][:-4]}"
 
-            # No matches of this type
-            if len(possible_matches) == 0:
-                different_type = 0
+        for o2 in objects:
+            if o2 == o:
                 continue
 
-            # Select match
-            match = random.choice(possible_matches)
+            shape2 = o2.split("_")[0].split("-")[0]
+            color2 = f"{o2.split('_')[1]}_{o2.split('_')[2][:-4]}"
 
-            # Edit @Alexa: If there are possible matches left that have not yet been selected,
-            # select one (to ensure that as many possible pairs are represented in the dataset
-            # as possible).
-            if len(set(possible_matches) - set([p[-1] for p in pairs_per_obj[o]])) > 0:
-                while (o, match) in pairs_per_obj[o]:
-                    match = random.choice(possible_matches)
+            if shape2 != shape and color2 != color:
+                pair_options[0].append((o, o2))
+            elif shape2 != shape and color2 == color:
+                pair_options[1].append((o, o2))
+            elif shape2 == shape and color2 != color:
+                pair_options[2].append((o, o2))
 
-            pairs_per_obj[o].append((o, match))
-            n_total_pairs += 1
-            different_type += 1
+    available_types = [t for t in [0, 1, 2] if len(pair_options[t]) > 0]
+    if len(available_types) == 0:
+        raise ValueError("No valid different pairs available for current object set.")
 
-            if n_total_pairs == n // 2:
-                break
+    # Cycle deterministically over available types to keep a balanced mix.
+    for i in range(target_pairs):
+        pair_type = available_types[i % len(available_types)]
+        o, match = random.choice(pair_options[pair_type])
+        pairs_per_obj[o].append((o, match))
 
     return pairs_per_obj
 
@@ -895,6 +869,7 @@ def generate_pairs(
     all_same_pairs = {}
     all_different_shape_pairs = {}
     all_different_color_pairs = {}
+    all_fully_different_pairs = {}
 
     # Assign positions for object pairs and iterate over different-shape/different-color/same
     for pair in all_different_pairs.keys():
@@ -962,16 +937,22 @@ def generate_pairs(
                     )
 
     for pair in all_different_pairs.keys():
-        obj1_shape = pair[0].split("_")[0]
-        obj1_color = pair[0].split("_")[1]
+        # Parse object filenames correctly: shape_N_varX.png
+        obj1_shape = pair[0].split("_")[0].split("-")[0]
+        obj1_color = f"{pair[0].split('_')[1]}_{pair[0].split('_')[2][:-4]}"
 
-        obj2_shape = pair[1].split("_")[0]
-        obj2_color = pair[1].split("_")[1]
+        obj2_shape = pair[1].split("_")[0].split("-")[0]
+        obj2_color = f"{pair[1].split('_')[1]}_{pair[1].split('_')[2][:-4]}"
 
         if obj1_shape == obj2_shape:
             all_different_color_pairs[pair] = copy.deepcopy(all_different_pairs[pair])
         elif obj1_color == obj2_color:
             all_different_shape_pairs[pair] = copy.deepcopy(all_different_pairs[pair])
+        else:
+            all_fully_different_pairs[pair] = copy.deepcopy(all_different_pairs[pair])
+
+    # Semantic definition: "different" class contains pairs with BOTH shape AND scale different
+    # No fallback—if insufficient fully-different pairs exist, the class may be smaller than n//2
 
     if match_to_sample:
         """
@@ -1110,10 +1091,10 @@ def generate_pairs(
         )
 
     return (
-        all_different_pairs,
-        all_different_shape_pairs,
-        all_different_color_pairs,
-        all_same_pairs,
+        all_fully_different_pairs,     # "different": both shape and scale differ
+        all_different_shape_pairs,     # "different-shape": shape differs, scale same
+        all_different_color_pairs,     # "different-color": scale differs, shape same
+        all_same_pairs,                # "same": both shape and scale same
     )
 
 

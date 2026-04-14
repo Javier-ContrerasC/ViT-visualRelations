@@ -360,3 +360,32 @@ Donde X es -1 o 32, pero siempre el mismo en toda la cadena.
 4. ¿Existe el split que vas a evaluar (test_iid solo si lo generaste)?
 
 Si quieres, te preparo un bloque de comandos “copiar y pegar” para dos rutas completas: RMTS no-compositional y RMTS compositional-32.
+
+
+
+# Codigos iniciales post-fix
+
+Preparación (una sola vez por sesión)
+source conda.sh
+conda activate relational-circuits
+
+Generar source forma+escala (obligatorio antes de regenerar datasets)
+python data.py --create_source --source NOISE_RGB --obj_size 32
+
+Discrimination IID completo (train/val/test + test_iid)
+python data.py --source NOISE_RGB --patch_size 16 --obj_size 32 --n_train 6400 --n_val 6400 --n_test 6400 --compositional -1
+python data.py --source NOISE_RGB --patch_size 16 --obj_size 32 --n_train 6400 --compositional -1 --create_held_out_test_set
+
+Entrenamiento Discrimination (ViT)
+WANDB_MODE=online python train.py -m vit --dataset_str NOISE_RGB --patch_size 16 --obj_size 32 --n_train 6400 --n_val 6400 --n_test 6400 --compositional -1 --batch_size 64 --num_epochs 30
+
+RMTS completo (train/val/test + test_iid)
+python data.py --create_source --source mts --obj_size 32
+python data.py --source mts --patch_size 16 --obj_size 32 --n_train 6400 --n_val 6400 --n_test 6400 --match_to_sample --compositional -1
+python data.py --source mts --patch_size 16 --obj_size 32 --n_train 6400 --match_to_sample --compositional -1 --create_held_out_test_set
+
+Entrenamiento RMTS (ViT)
+WANDB_MODE=online python train.py -m vit --dataset_str mts --patch_size 16 --obj_size 32 --n_train 6400 --n_val 6400 --n_test 6400 --compositional -1 --match_to_sample --batch_size 64 --num_epochs 30
+
+Si quieres versión compositional-32, reemplaza --compositional -1 por --compositional 32 en generación y entrenamiento.
+
