@@ -1210,16 +1210,45 @@ if __name__ == "__main__":
     # path = os.path.join(model_string, dataset_str)
 
     # Construct train set + DataLoader
+    base_data_root = os.path.join(
+        "stimuli",
+        dataset_str,
+        f"aligned/b{patch_size}/N_{obj_size}",
+    )
+
     if compositional > 0:
         args.n_train_tokens = compositional
         args.n_val_tokens = compositional
         args.n_test_tokens = 256 - compositional
 
-    comp_str = f"{args.n_train_tokens}-{args.n_val_tokens}-{args.n_test_tokens}"
+        # Prefer an existing generated directory for this compositional setup.
+        # This keeps compatibility when TOTAL_OBJECT_TOKENS changes (e.g., 64 -> 32-32-32).
+        inferred_comp_str = None
+        prefix = f"trainsize_{n_train}_{args.n_train_tokens}-{args.n_val_tokens}-"
+        if os.path.exists(base_data_root):
+            matches = [
+                d
+                for d in os.listdir(base_data_root)
+                if d.startswith(prefix)
+                and os.path.isdir(os.path.join(base_data_root, d))
+            ]
+            if len(matches) == 1:
+                inferred_comp_str = matches[0].split("trainsize_")[-1].split("_", 1)[1]
+
+        if inferred_comp_str is not None:
+            comp_str = inferred_comp_str
+            t_train, t_val, t_test = [int(x) for x in comp_str.split("-")]
+            args.n_train_tokens = t_train
+            args.n_val_tokens = t_val
+            args.n_test_tokens = t_test
+        else:
+            comp_str = f"{args.n_train_tokens}-{args.n_val_tokens}-{args.n_test_tokens}"
+    else:
+        comp_str = f"{args.n_train_tokens}-{args.n_val_tokens}-{args.n_test_tokens}"
+
     data_dir = os.path.join(
-        "stimuli",
-        dataset_str,
-        f"aligned/b{patch_size}/N_{obj_size}/trainsize_{n_train}_{comp_str}",
+        base_data_root,
+        f"trainsize_{n_train}_{comp_str}",
     )
 
     if model_type == "vit":

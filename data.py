@@ -1224,6 +1224,11 @@ def create_stimuli(
 
     for sd_class, item_dict in items:
         setting = f"{patch_dir}/{condition}/{sd_class}"
+        os.makedirs(setting, exist_ok=True)
+
+        # Remove stale images from previous generations so datadict and filesystem stay aligned.
+        for old_im in glob.glob(f"{setting}/*.png"):
+            os.remove(old_im)
 
         for key in item_dict.keys():
 
