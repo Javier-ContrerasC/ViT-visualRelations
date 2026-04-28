@@ -263,7 +263,10 @@ def compute_auxiliary_loss(
         states_1 = states_1.reshape((batch_size, num_patches, -1))
         states_2 = states_2.reshape((batch_size, num_patches, -1))
     
-    states = torch.cat((states_1, states_2), 1)
+    if probe_type == "cls":
+        states = torch.cat((states_1, states_2), 1)
+    else:
+        states = torch.cat((states_1, states_2), 0)
 
     # shape and color labels are maintained for each patch within an object
     shapes_1 = data["shape_1"].repeat_interleave(num_patches)
@@ -334,7 +337,6 @@ def compute_auxiliary_loss(
                     assert states.shape[0] == 16 * batch_size and states.shape[1] == 768
 
     if probe_type == "shape-color":
-        states = torch.cat((states_1, states_2), 0)
         # Run shape probe on half of the embedding, color probe on other half, ensures nonoverlapping subspaces
         shape_outs = shape_probe(states[:, :probe_dim])
         color_outs = color_probe(states[:, probe_dim:])
@@ -674,10 +676,11 @@ def evaluation(
     with torch.no_grad():
         running_loss_val = 0.0
         running_acc_val = 0.0
-        running_roc_auc = 0.0
         running_shape_acc_val = 0.0
         running_color_acc_val = 0.0
         running_obj_acc_val = 0.0
+        all_labels = []
+        all_scores = []
 
         for bi, (d, f) in enumerate(val_dataloader):
             inputs = d["pixel_values"].squeeze(1).to(device)
@@ -718,7 +721,9 @@ def evaluation(
 
             preds = output_logits.argmax(1)
             acc = accuracy_score(labels.to("cpu"), preds.to("cpu"))
-            roc_auc = roc_auc_score(labels.to("cpu"), output_logits.to("cpu")[:, -1])
+
+            all_labels.append(labels.detach().to("cpu"))
+            all_scores.append(output_logits.detach().to("cpu")[:, -1])
 
             if args.auxiliary_loss:
                 aux_loss, shape_acc, color_acc = compute_auxiliary_loss(
@@ -774,11 +779,13 @@ def evaluation(
 
             running_acc_val += acc * inputs.size(0)
             running_loss_val += loss.detach().item() * inputs.size(0)
-            running_roc_auc += roc_auc * inputs.size(0)
 
-        epoch_loss_val = running_loss_val / 6400  # len(val_dataset)
-        epoch_acc_val = running_acc_val / 6400  # len(val_dataset)
-        epoch_roc_auc = running_roc_auc / 6400  # len(val_dataset)
+        epoch_loss_val = running_loss_val / len(val_dataset)
+        epoch_acc_val = running_acc_val / len(val_dataset)
+        epoch_roc_auc = roc_auc_score(
+            torch.cat(all_labels).numpy(),
+            torch.cat(all_scores).numpy(),
+        )
 
         print()
         print("Val loss: {:.4f}".format(epoch_loss_val))
