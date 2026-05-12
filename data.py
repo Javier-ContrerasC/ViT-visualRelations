@@ -335,9 +335,20 @@ def load_dataset(root_dir, subset=None, task="discrimination", size=-1):
         for im in im_paths:
             dict_key = os.path.join(*im.split("/")[-3:])
             if task == "rmts":
+                # Calculate correct label for RMTS: 1 if sample and display have same relationship, 0 otherwise
+                sample_same = (data_dictionary[dict_key]["s1"] == data_dictionary[dict_key]["s2"]) and (
+                    scale_to_int[extract_scale_key(data_dictionary[dict_key]["c1"])] == 
+                    scale_to_int[extract_scale_key(data_dictionary[dict_key]["c2"])]
+                )
+                display_same = (data_dictionary[dict_key]["display1-s"] == data_dictionary[dict_key]["display2-s"]) and (
+                    scale_to_int[extract_scale_key(data_dictionary[dict_key]["display1-c"])] == 
+                    scale_to_int[extract_scale_key(data_dictionary[dict_key]["display2-c"])]
+                )
+                correct_label = int(sample_same == display_same)
+                
                 im_dict = {
                     "image_path": im,
-                    "label": l,
+                    "label": correct_label,
                     "stream_1": [
                         i + 1 for i in data_dictionary[dict_key]["pos1"]
                     ],  # +1 accounts for the CLS token

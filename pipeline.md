@@ -70,23 +70,23 @@ python data.py --source mts --patch_size 16 --obj_size 32 --create_das --match_t
 ```bash
 # CLIP Discrimination (pretrained)
 python train.py -m clip_vit --pretrained --dataset_str NOISE_RGB --patch_size 16 --obj_size 32 \
-  --num_epochs 30 --batch_size 128 --compositional -1 --auxiliary_loss --num_epochs 30
+  --num_epochs 30 --batch_size 128 --compositional -1 --auxiliary_loss
 
 # ImageNet Discrimination (pretrained)
 python train.py -m vit --pretrained --dataset_str NOISE_RGB --patch_size 16 --obj_size 32 \
-  --num_epochs 30 --batch_size 128 --compositional -1 --auxiliary_loss --num_epochs 100
+  --num_epochs 30 --batch_size 128 --compositional -1 --auxiliary_loss
 
 # DINO Discrimination (pretrained)
 python train.py -m dino_vit --pretrained --dataset_str NOISE_RGB --patch_size 16 --obj_size 32 \
-  --num_epochs 30 --batch_size 128 --compositional -1 --auxiliary_loss --num_epochs 30
+  --num_epochs 30 --batch_size 128 --compositional -1 --auxiliary_loss
 
 # MAE Discrimination (pretrained)
 python train.py -m mae_vit --pretrained --dataset_str NOISE_RGB --patch_size 16 --obj_size 32 \
-  --num_epochs 30 --batch_size 128 --compositional -1 --auxiliary_loss --num_epochs 100
+  --num_epochs 30 --batch_size 128 --compositional -1 --auxiliary_loss
 
 # From Scratch Discrimination
 python train.py -m vit --dataset_str NOISE_RGB --patch_size 16 --obj_size 32 \
-  --num_epochs 30 --batch_size 128 --compositional -1 --auxiliary_loss --num_epochs 100
+  --num_epochs 30 --batch_size 128 --compositional -1 --auxiliary_loss
 ```
 
 ### Ejemplos de llamadas para RMTS (b16)
@@ -106,11 +106,11 @@ python train.py -m vit --pretrained --dataset_str mts --patch_size 16 --obj_size
 ```bash
 # DINOv2 Discrimination
 python train.py -m dinov2_vit --dataset_str NOISE_RGB --patch_size 14 --obj_size 28 \
-  --lr 1e-6 --num_epochs 30 --batch_size 64 --compositional -1
+  --num_epochs 30 --batch_size 64 --compositional -1
 
 # DINOv2 RMTS
 python train.py -m dinov2_vit --dataset_str mts --patch_size 14 --obj_size 28 \
-  --lr 1e-6 --num_epochs 30 --batch_size 64 --compositional -1
+  --num_epochs 30 --batch_size 64 --compositional -1
 ```
 
 **ADVERTENCIA - WandB local stub:**

@@ -5,35 +5,132 @@
 - ImageNet:
     - Epoch accuracy: 0.9853
     - Epoch shape accuracy: 0.9753
-    - Epoch color accuracy: 0.0.9749
+    - Epoch color accuracy: 0.9749
     - Val acc: 0.9885
     - Val ROC-AUC: 0.9933
+- ImageNet: (sin loss)
+    - Epoch accuracy: 0.9841
+    - Val acc: 0.9794
+    - Val ROC-AUC: 0.9833
+
 - Clip: 
     - Epoch accuracy: 0.9858
     - Epoch shape accuracy: 0.9858
     - Epoch color accuracy: 0.9858 
     - Val acc: 0.9974
     - Val ROC-AUC: 0.9999
+- Clip: (sin loss)
+    - Epoch accuracy: 0.9858
+    - Val acc: 0.9957
+    - Val ROC-AUC: 0.9999
+
 - Dino:
     - Epoch accuracy: 0.9858
     - Epoch shape accuracy: 0.9858
     - Epoch color accuracy: 0.9858
     - Val acc: 0.9852
     - Val ROC-AUC: 0.9977
+- Dino: (sin loss)
+    - Epoch accuracy: 0.9858
+    - Val acc: 0.9763
+    - Val ROC-AUC: 0.9927
+
 - Mae:
     - Epoch accuracy: 0.9858
     - Epoch shape accuracy: 0.9828
     - Epoch color accuracy: 0.9731
     - Val acc: 0.9553
     - Val ROC-AUC: 0.9699
-- Scratch:
-    - Epoch accuracy: 0.9856
-    - Epoch shape accuracy: 0.9457
-    - Epoch color accuracy: 0.9021
-    - Val acc: 0.8780
-    - Val ROC-AUC: 0.8955
+- Mae: (sin loss)
+    - Epoch accuracy: 0.9858
+    - Val acc: 0.9818
+    - Val ROC-AUC: 0.9937
 
-### Sobre --auxiliary_loss
+- Scratch:
+    - Epoch accuracy: 0.9986
+    - Epoch shape accuracy: 0.9977 
+    - Epoch color accuracy: 0.9932
+    - Val acc: 0.8983 
+    - Val ROC-AUC: 0.9112
+- Scratch: (sin loss) (100 epochs)
+    - Epoch accuracy: 0.7316 
+    - Val acc: 0.7436 
+    - Val ROC-AUC: 0.4750 
+- Scratch: (sin loss) (300 epochs)
+    - Epoch accuracy:
+    - Val acc:
+    - Val ROC-AUC: 
+
+- Dino v2:
+    - Epoch accuracy: 0.9863
+    - Epoch shape accuracy: 0.9863 
+    - Epoch color accuracy: 0.9863 
+    - Val acc: 0.9974 
+    - Val ROC-AUC: 0.9999
+- Dino v2 (sin loss):
+    - Epoch accuracy: 0.9863
+    - Val acc: 0.9976
+    - Val ROC-AUC: 0.9996
+
+
+## RTMS, no compositional
+
+- ImageNet: (200 epochs) ajustado
+    - Epoch accuracy: 0.9715
+    - Epoch shape accuracy: 0.9914 
+    - Epoch color accuracy: 0.9903
+    - Val acc: 0.5988
+    - Val ROC-AUC: 0.6430
+- ImageNet: (100 epochs - sin losses)
+    - Epoch accuracy: 0.9790
+    - Val acc: 0.6172
+    - Val ROC-AUC: 0.6456
+    
+- Clip: (50 epochs) ajustado
+    - Epoch accuracy: 0.9915
+    - Epoch shape accuracy: 0.9915
+    - Epoch color accuracy: 0.9915
+    - Val acc: 0.9207
+    - Val ROC-AUC: 0.9590
+- Clip: (30 epochs - sin losses)
+    - Epoch accuracy: 0.9915
+    - Val acc: 0.8925
+    - Val ROC-AUC: 0.9366
+
+- Dino: (100 epochs) ajustado
+    - Epoch accuracy: 0.9915
+    - Epoch shape accuracy: 0.9915
+    - Epoch color accuracy: 0.9915s
+    - Val acc: 0.5116
+    - Val ROC-AUC: 0.5116
+- Dino: (30 epochs - sin losses)
+    - Epoch accuracy: 0.9915
+    - Val acc: 0.5156
+    - Val ROC-AUC: 0.5198
+
+- Mae: (100 epochs) - ajustado
+    - Epoch accuracy: 0.6102
+    - Epoch shape accuracy: 0.9909
+    - Epoch color accuracy: 0.9910
+    - Val acc: 0.4971
+    - Val ROC-AUC: 0.4973
+- Mae: (50 epochs - sin losses)
+    - Epoch accuracy: 0.9897
+    - Val acc: 0.5070
+    - Val ROC-AUC: 0.5027
+
+- Dino v2:
+    - Epoch accuracy: 0.9915
+    - Epoch shape accuracy: 0.9915
+    - Epoch color accuracy: 0.9915
+    - Val acc: 0.5339
+    - Val ROC-AUC: 0.5376
+- Dino v2 (sin losses):
+    - Epoch accuracy: 0.9893
+    - Val acc: 0.8841
+    - Val ROC-AUC: 0.9510
+
+## Sobre --auxiliary_loss
 
 Cuando activas --auxiliary_loss, esas dos métricas no miden la tarea principal same/different, sino el desempeño de las sondas auxiliares (probes) sobre las representaciones internas del ViT.
 
