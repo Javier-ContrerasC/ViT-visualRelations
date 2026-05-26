@@ -732,6 +732,69 @@ def compute_metrics(eval_preds, labels, criterion, device=None):
     return {"accuracy": accuracy, "loss": loss}
 
 
+def resolve_model_path(run_id, pretrain, ds, obj_size, comp_str, patch_size, task):
+    if run_id is None:
+        raise ValueError("run_id is required to locate a checkpoint")
+
+    # Allow passing a full path.
+    if os.path.sep in run_id:
+        candidate = run_id if run_id.endswith(".pth") else f"{run_id}.pth"
+        if os.path.exists(candidate):
+            return candidate
+        if os.path.exists(run_id):
+            return run_id
+        raise FileNotFoundError(f"Checkpoint path does not exist: {candidate}")
+
+    candidate_dirs = [
+        os.path.join(
+            "models",
+            f"b{patch_size}",
+            task,
+            pretrain,
+            f"{ds}_{obj_size}",
+        ),
+        os.path.join("models", pretrain, f"{ds}_{obj_size}"),
+    ]
+
+    run_id_stem = run_id[:-4] if run_id.endswith(".pth") else run_id
+    candidate_stems = [run_id_stem]
+    if not run_id_stem.startswith(f"{comp_str}_"):
+        candidate_stems.append(f"{comp_str}_{run_id_stem}")
+
+    candidates = []
+    for base_dir in candidate_dirs:
+        for stem in candidate_stems:
+            candidates.append(os.path.join(base_dir, f"{stem}.pth"))
+
+    for candidate in candidates:
+        if os.path.exists(candidate):
+            return candidate
+
+    # Fallback: search for any checkpoint containing the run_id.
+    matches = []
+    for base_dir in candidate_dirs:
+        matches.extend(glob.glob(os.path.join(base_dir, f"*{run_id_stem}*.pth")))
+
+    # Deduplicate while keeping order.
+    matches = list(dict.fromkeys(matches))
+
+    if len(matches) == 1:
+        return matches[0]
+    if len(matches) > 1:
+        raise FileNotFoundError(
+            "Multiple checkpoints match run_id; pass a full path or a more specific run_id:\n"
+            + "\n".join(matches)
+        )
+
+    attempted = "\n".join(candidates)
+    search_dirs = "\n".join(candidate_dirs)
+    raise FileNotFoundError(
+        f"No checkpoint found for run_id '{run_id}'.\n"
+        f"Tried:\n{attempted}\n"
+        f"Searched in:\n{search_dirs}"
+    )
+
+
 if __name__ == "__main__":
     # Set device
     if torch.cuda.is_available():
@@ -774,7 +837,15 @@ if __name__ == "__main__":
         comp_str = f"{compositional}-{compositional}-{256-compositional}"
 
     # Load model
-    model_path = f"./models/b{patch_size}/{task}/{pretrain}/{ds}_{obj_size}/{comp_str}_{run_id}.pth"
+    model_path = resolve_model_path(
+        run_id=run_id,
+        pretrain=pretrain,
+        ds=ds,
+        obj_size=obj_size,
+        comp_str=comp_str,
+        patch_size=patch_size,
+        task=task,
+    )
 
     print(model_path)
     model, image_processor = utils.load_model_from_path(

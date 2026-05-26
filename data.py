@@ -1777,6 +1777,38 @@ def sample_positions(patch_size, obj_size):
     return positions, all_patches
 
 
+def resolve_train_str(base_dir, compositional, n_train=6400):
+    if compositional > 0:
+        return f"trainsize_{n_train}_{compositional}-{compositional}-{TOTAL_OBJECT_TOKENS - compositional}"
+
+    preferred = f"trainsize_{n_train}_256-256-256"
+    if os.path.exists(os.path.join(base_dir, preferred)):
+        return preferred
+
+    fallback = (
+        f"trainsize_{n_train}_{TOTAL_OBJECT_TOKENS}-{TOTAL_OBJECT_TOKENS}-{TOTAL_OBJECT_TOKENS}"
+    )
+    if os.path.exists(os.path.join(base_dir, fallback)):
+        return fallback
+
+    if os.path.exists(base_dir):
+        matches = [
+            d
+            for d in os.listdir(base_dir)
+            if d.startswith(f"trainsize_{n_train}_")
+            and os.path.isdir(os.path.join(base_dir, d))
+        ]
+        if len(matches) == 1:
+            return matches[0]
+        if len(matches) > 1:
+            raise ValueError(
+                "Multiple trainsize directories found; set --compositional to choose: "
+                + ", ".join(sorted(matches))
+            )
+
+    return fallback
+
+
 def create_discrimination_das_datasets(
     source="NOISE_RGB",
     patch_size=16,
@@ -1810,12 +1842,10 @@ def create_discrimination_das_datasets(
     else:
         other_feature_str = "shape"
 
-    if compositional > 0:
-        train_str = (
-            f"trainsize_6400_{compositional}-{compositional}-{TOTAL_OBJECT_TOKENS - compositional}"
-        )
-    else:
-        train_str = f"trainsize_6400_{TOTAL_OBJECT_TOKENS}-{TOTAL_OBJECT_TOKENS}-{TOTAL_OBJECT_TOKENS}"
+    base_data_root = os.path.join(
+        "stimuli", source, "aligned", f"b{patch_size}", f"N_{obj_size}"
+    )
+    train_str = resolve_train_str(base_data_root, compositional)
 
     # The path to the dataset that we wil generate
     das_imgs_path = os.path.join(
@@ -2097,7 +2127,10 @@ def create_rmts_das_datasets(
             f"trainsize_6400_{compositional}-{compositional}-{TOTAL_OBJECT_TOKENS - compositional}"
         )
     else:
-        train_str = f"trainsize_6400_{TOTAL_OBJECT_TOKENS}-{TOTAL_OBJECT_TOKENS}-{TOTAL_OBJECT_TOKENS}"
+        base_data_root = os.path.join(
+            "stimuli", "mts", "aligned", f"b{patch_size}", f"N_{obj_size}"
+        )
+        train_str = resolve_train_str(base_data_root, compositional)
 
     # This is the path to the dataset that we will generate
     das_imgs_path = os.path.join(
