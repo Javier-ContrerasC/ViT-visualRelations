@@ -273,23 +273,6 @@ python linear_probe_intervention.py --pretrain imagenet --run_id l2cgg62f \
 
 ---
 
-## Resumen: Run IDs conocidos en el repo
-
-| Pretrain | Task | b16 No-comp | b16 Comp-32 | b14 No-comp | b14 Comp-32 |
-|----------|------|-----------|-----------|-----------|-----------|
-| CLIP | Disc | 2jylw4un | qzu5c6cy | - | - |
-| CLIP | RMTS | tavk2a8o | ld8hk72f | - | - |
-| ImageNet | Disc | 46bl9da9 | sckdfa23 | - | - |
-| ImageNet | RMTS | l2cgg62f | g0vq12sz | - | - |
-| DINO | Disc | xkil74gw | emmfnswo | - | - |
-| DINO | RMTS | qdhm9vog | eawzcswn | - | - |
-| MAE | Disc | m2zlw53d | epjzjtuf | - | - |
-| MAE | RMTS | 94ajmz1n | evpzdb93 | - | - |
-| DINOv2 | Disc | - | - | m7ngrtcn | o0d45svp |
-| DINOv2 | RMTS | - | - | okppu3qm | udjgzn8d |
-
----
-
 ## Advertencias y troubleshooting
 
 ### 1. Rutas de checkpoints incompatibles
@@ -384,8 +367,106 @@ python data.py --create_source --source mts --obj_size 32
 python data.py --source mts --patch_size 16 --obj_size 32 --n_train 6400 --n_val 6400 --n_test 6400 --match_to_sample --compositional -1
 python data.py --source mts --patch_size 16 --obj_size 32 --n_train 6400 --match_to_sample --compositional -1 --create_held_out_test_set
 
-Entrenamiento RMTS (ViT)
-WANDB_MODE=online python train.py -m vit --dataset_str mts --patch_size 16 --obj_size 32 --n_train 6400 --n_val 6400 --n_test 6400 --compositional -1 --match_to_sample --batch_size 64 --num_epochs 30
 
-Si quieres versión compositional-32, reemplaza --compositional -1 por --compositional 32 en generación y entrenamiento.
+---
 
+ENTRENAMIENTO DISCRIMINACION
+
+python train.py -m vit --pretrained --dataset_str NOISE_RGB --patch_size 16 --obj_size 32 --num_epochs 100 --batch_size 128 --compositional -1 --auxiliary_loss && python train.py -m vit --pretrained --dataset_str NOISE_RGB --patch_size 16 --obj_size 32 --num_epochs 50 --batch_size 128 --compositional -1 && python train.py -m clip_vit --pretrained --dataset_str NOISE_RGB --patch_size 16 --obj_size 32 --num_epochs 30 --batch_size 128 --compositional -1 --auxiliary_loss && python train.py -m clip_vit --pretrained --dataset_str NOISE_RGB --patch_size 16 --obj_size 32 --num_epochs 15 --batch_size 128 --compositional -1 && python train.py -m dino_vit --pretrained --dataset_str NOISE_RGB --patch_size 16 --obj_size 32 --num_epochs 20 --batch_size 128 --compositional -1 && python train.py -m dino_vit --pretrained --dataset_str NOISE_RGB --patch_size 16 --obj_size 32 --num_epochs 50 --batch_size 128 --compositional -1 --auxiliary_loss && python train.py -m mae_vit --pretrained --dataset_str NOISE_RGB --patch_size 16 --obj_size 32 --num_epochs 20 --batch_size 128 --compositional -1 && python train.py -m mae_vit --pretrained --dataset_str NOISE_RGB --patch_size 16 --obj_size 32 --num_epochs 50 --batch_size 128 --compositional -1 --auxiliary_loss && python train.py -m dinov2_vit --pretrained --dataset_str NOISE_RGB --patch_size 14 --obj_size 28 --num_epochs 15 --batch_size 128 --compositional -1 && python train.py -m dinov2_vit --pretrained --dataset_str NOISE_RGB --patch_size 14 --obj_size 28 --num_epochs 30 --batch_size 128 --compositional -1 --auxiliary_loss
+
+python train.py -m vit --dataset_str NOISE_RGB --patch_size 16 --obj_size 32 --num_epochs 200 --batch_size 128 --compositional -1 --auxiliary_loss
+python train.py -m vit --dataset_str NOISE_RGB --patch_size 16 --obj_size 32 --num_epochs 100 --batch_size 128 --compositional -1
+---
+
+ENTRENAMIENTO RTMS
+
+python train.py -m vit --pretrained --dataset_str mts --patch_size 16 --obj_size 32 --num_epochs 200 --batch_size 128 --compositional -1 --auxiliary_loss && python train.py -m vit --pretrained --dataset_str mts --patch_size 16 --obj_size 32 --num_epochs 100 --batch_size 128 --compositional -1 && python train.py -m clip_vit --pretrained --dataset_str mts --patch_size 16 --obj_size 32 --num_epochs 50 --batch_size 128 --compositional -1 --auxiliary_loss && python train.py -m clip_vit --pretrained --dataset_str mts --patch_size 16 --obj_size 32 --num_epochs 30 --batch_size 128 --compositional -1 && python train.py -m dino_vit --pretrained --dataset_str mts --patch_size 16 --obj_size 32 --num_epochs 30 --batch_size 128 --compositional -1 && python train.py -m dino_vit --pretrained --dataset_str mts --patch_size 16 --obj_size 32 --num_epochs 100 --batch_size 128 --compositional -1 --auxiliary_loss &&
+
+python train.py -m dinov2_vit --pretrained --dataset_str mts --patch_size 14 --obj_size 28 --num_epochs 30 --batch_size 128 --compositional -1 ; python train.py -m dinov2_vit --pretrained --dataset_str mts --patch_size 14 --obj_size 28 --num_epochs 50 --batch_size 128 --compositional -1 --auxiliary_loss ; python train.py -m mae_vit --pretrained --dataset_str mts --patch_size 16 --obj_size 32 --num_epochs 50 --batch_size 128 --compositional -1 ; python train.py -m mae_vit --pretrained --dataset_str mts --patch_size 16 --obj_size 32 --num_epochs 100 --batch_size 128 --compositional -1 --auxiliary_loss
+
+python train.py -m vit --dataset_str mts --patch_size 16 --obj_size 32 --num_epochs 300 --batch_size 128 --compositional -1 --auxiliary_loss
+python train.py -m vit --dataset_str mts --patch_size 16 --obj_size 32 --num_epochs 200 --batch_size 128 --compositional -1
+---
+
+DAS - LINEAR PROBE w/AUX LOSS
+
+CLIP
+python das.py --pretrain clip --task discrimination --run_id model_29_2e-06_6a197401-1b1e-43e3-ace6-dbb3793d8489 --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; python das.py --pretrain clip --task rmts -ds mts --run_id model_49_2e-06_46608962-f732-4cd6-8606-97c70dfcc8c1 --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+
+CUDA_VISIBLE_DEVICES=0 python das.py --pretrain clip --task discrimination --run_id model_29_2e-06_6a197401-1b1e-43e3-ace6-dbb3793d8489 --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; CUDA_VISIBLE_DEVICES=0 python das.py --pretrain clip --task rmts -ds mts --run_id model_49_2e-06_46608962-f732-4cd6-8606-97c70dfcc8c1 --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+DINO
+python das.py --pretrain dino --task discrimination --run_id model_49_2e-06_c5e1de8a-b613-4851-90c2-0ca92b5d9e7c --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; python das.py --pretrain dino --task rmts -ds mts --run_id model_99_2e-06_b34b4d22-5ae2-4bbf-b05e-5b6fa1573065 --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+
+CUDA_VISIBLE_DEVICES=0 python das.py --pretrain dino --task discrimination --run_id model_49_2e-06_c5e1de8a-b613-4851-90c2-0ca92b5d9e7c --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; CUDA_VISIBLE_DEVICES=0 python das.py --pretrain dino --task rmts -ds mts --run_id model_99_2e-06_b34b4d22-5ae2-4bbf-b05e-5b6fa1573065 --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+
+DINOV2
+python das.py --pretrain dinov2 --task discrimination --run_id model_29_2e-06_ef385459-b223-4f67-8973-43aeba0f411f --analysis shape --compositional -1 --control none --patch_size 14 --obj_size 28 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; python das.py --pretrain dinov2 --task rmts -ds mts --run_id model_49_2e-06_c2a67f8e-fdb1-476c-b98d-7a2a940137f4 --analysis shape --compositional -1 --control none --patch_size 14 --obj_size 28 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+CUDA_VISIBLE_DEVICES=0 python das.py --pretrain dinov2 --task discrimination --run_id model_29_2e-06_ef385459-b223-4f67-8973-43aeba0f411f --analysis color --compositional -1 --control none --patch_size 14 --obj_size 28 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; CUDA_VISIBLE_DEVICES=1 python das.py --pretrain dinov2 --task rmts -ds mts --run_id model_49_2e-06_c2a67f8e-fdb1-476c-b98d-7a2a940137f4 --analysis color --compositional -1 --control none --patch_size 14 --obj_size 28 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+
+IMAGENET
+python das.py --pretrain imagenet --task discrimination --run_id model_99_2e-06_890cd6c4-e840-40ee-bae7-e797ecb1e45b --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; python das.py --pretrain imagenet --task rmts -ds mts --run_id model_199_2e-06_5893d3ce-bf15-4e32-9888-f03342f672e9 --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+CUDA_VISIBLE_DEVICES=1 python das.py --pretrain imagenet --task discrimination --run_id model_99_2e-06_890cd6c4-e840-40ee-bae7-e797ecb1e45b --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; CUDA_VISIBLE_DEVICES=1 python das.py --pretrain imagenet --task rmts -ds mts --run_id model_199_2e-06_5893d3ce-bf15-4e32-9888-f03342f672e9 --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+
+MAE
+python das.py --pretrain mae --task discrimination --run_id model_49_2e-06_d627acb6-e8ad-4185-88f6-68eaba365063 --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; python das.py --pretrain mae --task rmts -ds mts --run_id model_99_2e-06_5ca4e4a9-0001-4367-8a24-0bb04cc9b1d3 --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+CUDA_VISIBLE_DEVICES=1 python das.py --pretrain mae --task discrimination --run_id model_49_2e-06_d627acb6-e8ad-4185-88f6-68eaba365063 --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; CUDA_VISIBLE_DEVICES=1 python das.py --pretrain mae --task rmts -ds mts --run_id model_99_2e-06_5ca4e4a9-0001-4367-8a24-0bb04cc9b1d3 --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+
+SCRATCH
+python das.py --pretrain scratch --task discrimination --run_id model_199_2e-06_c516e30d-86b2-46a6-9e2e-9954bdf3c73a --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; python das.py --pretrain scratch --task rmts -ds mts --run_id model_299_2e-06_200b7a79-fee6-44f8-8187-1fc7926e63ff --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+CUDA_VISIBLE_DEVICES=1 python das.py --pretrain scratch --task discrimination --run_id model_199_2e-06_c516e30d-86b2-46a6-9e2e-9954bdf3c73a --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; CUDA_VISIBLE_DEVICES=1 python das.py --pretrain scratch --task rmts -ds mts --run_id model_299_2e-06_200b7a79-fee6-44f8-8187-1fc7926e63ff --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+
+LINEAR PROBING
+
+python linear_probe_intervention.py --pretrain clip --run_id model_49_2e-06_46608962-f732-4cd6-8606-97c70dfcc8c1 --patch_size 16 --obj_size 32 --compositional -1 --control false --alpha 1.0 --datasize 2000 ; python linear_probe_intervention.py --pretrain dino --run_id model_99_2e-06_b34b4d22-5ae2-4bbf-b05e-5b6fa1573065 --patch_size 16 --obj_size 32 --compositional -1 --control false --alpha 1.0 --datasize 2000 ; python linear_probe_intervention.py --pretrain dinov2 --run_id model_49_2e-06_c2a67f8e-fdb1-476c-b98d-7a2a940137f4 --patch_size 14 --obj_size 28 --compositional -1 --control false --alpha 1.0 --datasize 2000 ; python linear_probe_intervention.py --pretrain imagenet --run_id model_199_2e-06_5893d3ce-bf15-4e32-9888-f03342f672e9 --patch_size 16 --obj_size 32 --compositional -1 --control false --alpha 1.0 --datasize 2000 ; python linear_probe_intervention.py --pretrain mae --run_id model_99_2e-06_5ca4e4a9-0001-4367-8a24-0bb04cc9b1d3 --patch_size 16 --obj_size 32 --compositional -1 --control false --alpha 1.0 --datasize 2000
+
+python linear_probe_intervention.py --pretrain scratch --run_id model_299_2e-06_57205943-6232-46fa-8d9d-6602e8bd4136 --patch_size 16 --obj_size 32 --compositional -1 --control false --alpha 1.0 --datasize 2000
+
+
+---
+
+DAS - LINEAR PROBE W/O AUX LOSS
+
+CLIP
+python das.py --pretrain clip --task discrimination --run_id model_14_2e-06_1660c0a2-4cac-49b8-959c-0dba66ed9fd3 --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; python das.py --pretrain clip --task rmts -ds mts --run_id model_29_2e-06_76f2255c-2028-4a52-aa37-fa5c5ca78f28 --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+CUDA_VISIBLE_DEVICES=0 python das.py --pretrain clip --task discrimination --run_id model_14_2e-06_1660c0a2-4cac-49b8-959c-0dba66ed9fd3 --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; CUDA_VISIBLE_DEVICES=0 python das.py --pretrain clip --task rmts -ds mts --run_id model_29_2e-06_76f2255c-2028-4a52-aa37-fa5c5ca78f28 --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true 
+
+DINO
+python das.py --pretrain dino --task discrimination --run_id model_19_2e-06_1f304b43-ba91-4ac1-b435-e9b0acad60fd --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; python das.py --pretrain dino --task rmts -ds mts --run_id model_29_2e-06_da1723c3-e3c7-4de9-994b-367e60eb14e7 --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+CUDA_VISIBLE_DEVICES=0 python das.py --pretrain dino --task discrimination --run_id model_19_2e-06_1f304b43-ba91-4ac1-b435-e9b0acad60fd --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; CUDA_VISIBLE_DEVICES=0 python das.py --pretrain dino --task rmts -ds mts --run_id model_29_2e-06_da1723c3-e3c7-4de9-994b-367e60eb14e7 --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+DINOV2
+python das.py --pretrain dinov2 --task discrimination --run_id model_14_2e-06_7d7972c8-2736-4de9-8144-fae6b29bfd7a --analysis shape --compositional -1 --control none --patch_size 14 --obj_size 28 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; python das.py --pretrain dinov2 --task rmts -ds mts --run_id model_29_2e-06_5e9130b6-96c6-47d1-b9ff-04c65393663a --analysis shape --compositional -1 --control none --patch_size 14 --obj_size 28 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+CUDA_VISIBLE_DEVICES=1 python das.py --pretrain dinov2 --task discrimination --run_id model_14_2e-06_7d7972c8-2736-4de9-8144-fae6b29bfd7a --analysis color --compositional -1 --control none --patch_size 14 --obj_size 28 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; CUDA_VISIBLE_DEVICES=1 python das.py --pretrain dinov2 --task rmts -ds mts --run_id model_29_2e-06_5e9130b6-96c6-47d1-b9ff-04c65393663a --analysis color --compositional -1 --control none --patch_size 14 --obj_size 28 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+IMAGENET
+python das.py --pretrain imagenet --task discrimination --run_id model_49_2e-06_ca3da516-c1ff-42f0-81ad-0ebb1982ba78 --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; python das.py --pretrain imagenet --task rmts -ds mts --run_id model_99_2e-06_d912a591-5fce-4ad9-ae94-4fc021178a09 --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+CUDA_VISIBLE_DEVICES=1 python das.py --pretrain imagenet --task discrimination --run_id model_49_2e-06_ca3da516-c1ff-42f0-81ad-0ebb1982ba78 --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; CUDA_VISIBLE_DEVICES=1 python das.py --pretrain imagenet --task rmts -ds mts --run_id model_99_2e-06_d912a591-5fce-4ad9-ae94-4fc021178a09 --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+MAE
+python das.py --pretrain mae --task discrimination --run_id model_19_2e-06_a68971e3-bdf3-4fdc-b67f-ed4f96303fc0 --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; python das.py --pretrain mae --task rmts -ds mts --run_id model_49_2e-06_33c445ed-3d0b-463e-a9ac-f25f3d2fafab --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+python das.py --pretrain mae --task discrimination --run_id model_19_2e-06_a68971e3-bdf3-4fdc-b67f-ed4f96303fc0 --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; python das.py --pretrain mae --task rmts -ds mts --run_id model_49_2e-06_33c445ed-3d0b-463e-a9ac-f25f3d2fafab --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+SCRATCH
+CUDA_VISIBLE_DEVICES=0 python das.py --pretrain scratch --task discrimination --run_id model_99_2e-06_7e84b406-e32c-4454-b997-3571207da5d8 --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; python das.py --pretrain scratch --task rmts -ds mts --run_id model_199_2e-06_8f7ba8cf-d48d-443d-ad37-732d9b7a9d03 --analysis shape --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+CUDA_VISIBLE_DEVICES=0 python das.py --pretrain scratch --task discrimination --run_id model_99_2e-06_7e84b406-e32c-4454-b997-3571207da5d8 --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true --min_layer 0 --max_layer 12 ; python das.py --pretrain scratch --task rmts -ds mts --run_id model_199_2e-06_8f7ba8cf-d48d-443d-ad37-732d9b7a9d03 --analysis color --compositional -1 --control none --patch_size 16 --obj_size 32 --lr 0.001 --mask_lr 0.01 --num_epochs 20 --tie_weights true
+
+LINEAR PROBE
+python linear_probe_intervention.py --pretrain clip --run_id model_29_2e-06_76f2255c-2028-4a52-aa37-fa5c5ca78f28 --patch_size 16 --obj_size 32 --compositional -1 --control false --alpha 1.0 --datasize 2000 ; python linear_probe_intervention.py --pretrain dino --run_id model_29_2e-06_da1723c3-e3c7-4de9-994b-367e60eb14e7 --patch_size 16 --obj_size 32 --compositional -1 --control false --alpha 1.0 --datasize 2000 ; python linear_probe_intervention.py --pretrain dinov2 --run_id model_29_2e-06_5e9130b6-96c6-47d1-b9ff-04c65393663a --patch_size 14 --obj_size 28 --compositional -1 --control false --alpha 1.0 --datasize 2000 ; python linear_probe_intervention.py --pretrain imagenet --run_id model_99_2e-06_d912a591-5fce-4ad9-ae94-4fc021178a09 --patch_size 16 --obj_size 32 --compositional -1 --control false --alpha 1.0 --datasize 2000 ; python linear_probe_intervention.py --pretrain mae --run_id model_49_2e-06_33c445ed-3d0b-463e-a9ac-f25f3d2fafab --patch_size 16 --obj_size 32 --compositional -1 --control false --alpha 1.0 --datasize 2000 ; python linear_probe_intervention.py --pretrain scratch --run_id model_199_2e-06_8f7ba8cf-d48d-443d-ad37-732d9b7a9d03 --patch_size 16 --obj_size 32 --compositional -1 --control false --alpha 1.0 --datasize 2000

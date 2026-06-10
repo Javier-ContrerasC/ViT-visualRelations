@@ -46,20 +46,16 @@
     - Val acc: 0.9818
     - Val ROC-AUC: 0.9937
 
-- Scratch:
-    - Epoch accuracy: 0.9986
-    - Epoch shape accuracy: 0.9977 
-    - Epoch color accuracy: 0.9932
-    - Val acc: 0.8983 
-    - Val ROC-AUC: 0.9112
+- Scratch: (con loss) (200 epochs)
+    - Epoch accuracy: 0.9832
+    - Epoch shape accuracy: 0.9793
+    - Epoch color accuracy: 0.9663
+    - Val acc: 0.9010
+    - Val ROC-AUC: 0.9098
 - Scratch: (sin loss) (100 epochs)
     - Epoch accuracy: 0.7316 
     - Val acc: 0.7436 
     - Val ROC-AUC: 0.4750 
-- Scratch: (sin loss) (300 epochs)
-    - Epoch accuracy:
-    - Val acc:
-    - Val ROC-AUC: 
 
 - Dino v2:
     - Epoch accuracy: 0.9863
@@ -100,7 +96,7 @@
 - Dino: (100 epochs) ajustado
     - Epoch accuracy: 0.9915
     - Epoch shape accuracy: 0.9915
-    - Epoch color accuracy: 0.9915s
+    - Epoch color accuracy: 0.9915
     - Val acc: 0.5116
     - Val ROC-AUC: 0.5116
 - Dino: (30 epochs - sin losses)
@@ -123,12 +119,23 @@
     - Epoch accuracy: 0.9915
     - Epoch shape accuracy: 0.9915
     - Epoch color accuracy: 0.9915
-    - Val acc: 0.5339
-    - Val ROC-AUC: 0.5376
+    - Val acc: 0.6234
+    - Val ROC-AUC: 0.6577
 - Dino v2 (sin losses):
     - Epoch accuracy: 0.9893
     - Val acc: 0.8841
     - Val ROC-AUC: 0.9510
+
+- Scratch: (con loss)
+    - Epoch accuracy: 0.6046
+    - Epoch shape accuracy: 0.9457
+    - Epoch color accuracy: 0.7652
+    - Val acc: 0.4914
+    - Val ROC-AUC: 0.4925
+- Scratch: (sin loss) (200 epochs)
+    - Epoch accuracy: 0.5830
+    - Val acc: 0.5064
+    - Val ROC-AUC: 0.5027
 
 ## Sobre --auxiliary_loss
 
