@@ -1,15 +1,12 @@
-# Beyond the Doors of Perception: Scale-Based Experimental Replication
+# Scale Is Not Color: Attribute-Dependent Limits of Causal Subspace Analysis in Vision Transformers
 
-This repository is a derivative work based directly on the code and data released for the original paper, [Beyond the Doors of Perception: Vision Transformers Represent Relations Between Objects](<ORIGINAL_PAPER_LINK>) (NeurIPS 2024). The paper and the original implementation are the work of their original authors. Please refer to the original publication and repository for the authoritative description, authorship, citation, and original results:
+## Overview
 
-- Original repository: <https://github.com/alexatartaglini/relational-circuits>
-- Original paper: [Beyond the Doors of Perception: Vision Transformers Represent Relations Between Objects](<ORIGINAL_PAPER_LINK>)
-
-This repository does not claim authorship of the original paper or implementation. It documents an engineering thesis project for the Civil Engineering in Computer Science degree at the University of Chile. The current work replicates the original experiments while varying **scale** instead of **color** as the object attribute under investigation.
+This repository studies how causal subspace methods reveal representations in Vision Transformers. We replace color with object scale and reproduce the original analysis pipeline across multiple ViT-B models and training regimes. Shape yields the expected causal signature, while scale does not, despite the models solving the scale-based relational task; this shows that a failed intervention can reflect representational format rather than missing information.
 
 ## Scope of This Work
 
-The experimental setup, implementation structure, and much of the surrounding code are inherited from the original repository. The principal change in this work is replacing the color-based experimental attribute with scale. For efficiency and convenience, some directory names, route names, command-line values, and related identifiers remain associated with `color`; however, the code operating on those paths and values uses **scale** in the current experiments. These names are retained for compatibility with the existing pipeline and should not be interpreted as indicating that color is the manipulated attribute here.
+This work replace the color-based experimental attribute with scale. For efficiency and convenience, some directory names, route names, command-line values, and related identifiers remain associated with `color`; however, the code operating on those paths and values uses **scale** in the current experiments. These names are retained for compatibility with the existing pipeline and should not be interpreted as indicating that color is the manipulated attribute here.
 
 Some experiment configurations are stored in the `.local_wand_sweep.json` file. This file is used for convenience and allow the experiments to be run without requiring Weights & Biases (`wandb`). The original repository and paper remain the source of attribution for the inherited methodology and implementation.
 
@@ -41,4 +38,13 @@ Graphing files are found in `analysis`
 This repository requires the included local copy of Pyvene. Additionally, it uses the fork of TransformerLens specified by the original project: `https://github.com/mlepori1/TransformerLens.git`.
 
 When creating the virtual environment, select CUDA and PyTorch versions compatible with the available GPU hardware.
+
+---
+
+This repository is a fork of the original project:
+
+- Original repository: <https://github.com/alexatartaglini/relational-circuits>
+
+The current work replicates the original experiments while varying **scale** instead of **color** as the object attribute under investigation.
+
 
