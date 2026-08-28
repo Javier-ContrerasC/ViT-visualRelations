@@ -40,6 +40,7 @@ def make_barplot(data_path, outpath, title):
     ax.set_ylim(0, 1)
     plt.title(title)
     plt.savefig(f"{outpath}.pdf", bbox_inches="tight", format="pdf")
+    plt.savefig(f"{outpath}.png", bbox_inches="tight", format="png")
 
 
 if __name__ == "__main__":
@@ -74,5 +75,5 @@ if __name__ == "__main__":
     outdir = f"analysis/{args.pretrain}/b{args.patch_size}/trainsize_6400_{comp_str}/Linear_Intervention{alpha_str}/"
     os.makedirs(outdir, exist_ok=True)
     outpath = outdir + f"Linear_Intervention"
-    title = f"Abstract Representations of Same and Different: {args.pretrain.capitalize()} B/{args.patch_size}"
+    title = f"Abstract Representations of Same and Different: {args.pretrain.capitalize()}"
     make_barplot(data_path, outpath, title)

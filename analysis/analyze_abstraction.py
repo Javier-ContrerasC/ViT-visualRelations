@@ -39,10 +39,10 @@ def make_barplot(
         + ["Interp.: Shape"] * n_layers
         + ["Samp.: Shape"] * n_layers
         + ["Rand.: Shape"] * n_layers
-        + ["Added: Color"] * n_layers
-        + ["Interp.: Color"] * n_layers
-        + ["Samp.: Color"] * n_layers
-        + ["Rand.: Color"] * n_layers
+        + ["Added: Scale"] * n_layers
+        + ["Interp.: Scale"] * n_layers
+        + ["Samp.: Scale"] * n_layers
+        + ["Rand.: Scale"] * n_layers
     )
 
     print(len(accs))
@@ -50,32 +50,22 @@ def make_barplot(
         {"Intervention Acc.": accs, "Layers": layers, "Eval": eval}
     )
     sns.set_theme(style="darkgrid")
-    sns.set(font_scale=1.55)
+    sns.set(font_scale=1.25)
     sns.catplot(
         data,
         x="Layers",
         y="Intervention Acc.",
         hue="Eval",
         kind="bar",
-        height=4,
+        height=3,
         aspect=4,
         width=0.75,
-        legend_out=False,
-        palette=[
-            "darkblue",
-            "blue",
-            "royalblue",
-            "lightskyblue",
-            "darkred",
-            "red",
-            "coral",
-            "orange",
-        ],
+
     )
     ax = plt.gca()
     ax.axhline(y=0.5, color="red", linestyle="dashed")
     ax.set_ylim(0, 1)
-    plt.legend(fontsize="x-small", title_fontsize="40")
+
     plt.title(title)
     plt.savefig(f"{outpath}.pdf", bbox_inches="tight", format="pdf")
     plt.savefig(f"{outpath}.png", bbox_inches="tight", format="png")
@@ -136,7 +126,7 @@ if __name__ == "__main__":
         args.task = "RMTS"
     else:
         args.task = "Discrimination"
-    title = f"Novel Representations Analysis: {args.task} {args.pretrain}-b{args.patch_size}"
+    title = f"Novel Representations Analysis: {'Discriminación' if args.task == 'Discrimination' else 'RMTS'} {args.pretrain.capitalize()}"
     make_barplot(
         shape,
         color,

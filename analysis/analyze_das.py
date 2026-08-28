@@ -42,13 +42,13 @@ def make_barplot(
     )
     eval = (
         ["Disc. Shape"] * n_layers
-        + ["Disc. Color"] * n_layers
+        + ["Disc. Scale"] * n_layers
         + ["Disc. Shape Control"] * n_layers
-        + ["Disc. Color Control"] * n_layers
+        + ["Disc. Scale Control"] * n_layers
         + ["RMTS Shape"] * n_layers
-        + ["RMTS Color"] * n_layers
+        + ["RMTS Scale"] * n_layers
         + ["RMTS Shape Control"] * n_layers
-        + ["RMTS Color Control"] * n_layers
+        + ["RMTS Scale Control"] * n_layers
     )
 
     print(len(accs))
@@ -70,6 +70,7 @@ def make_barplot(
     ax = plt.gca()
     ax.axhline(y=0.5, color="red", linestyle="dashed")
     ax.set_ylim(0, 1)
+    
     plt.title(title)
     plt.savefig(f"{outpath}.pdf", bbox_inches="tight", format="pdf")
     plt.savefig(f"{outpath}.png", bbox_inches="tight", format="png")
@@ -136,7 +137,7 @@ if __name__ == "__main__":
     )
     os.makedirs(outdir, exist_ok=True)
     outpath = outdir + f"/DAS"
-    title = f"Counterfactual Interventions: {args.pretrain}-b{args.patch_size}"
+    title = f"Counterfactual Interventions: {args.pretrain.capitalize()}"
     make_barplot(
         disc_shape,
         disc_shape_control,

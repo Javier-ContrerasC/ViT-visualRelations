@@ -1,12 +1,27 @@
-# Beyond the Doors of Perception: Vision Transformers Represent Relations Between Objects
-This repository contains the code and data necessary to reproduce the results in Beyond the Doors of Perception: Vision Transformers Represent Relations Between Objects (NeurIPS 2024). Original model weights are available upon request.
+# Beyond the Doors of Perception: Scale-Based Experimental Replication
+
+This repository is a derivative work based directly on the code and data released for the original paper, [Beyond the Doors of Perception: Vision Transformers Represent Relations Between Objects](<ORIGINAL_PAPER_LINK>) (NeurIPS 2024). The paper and the original implementation are the work of their original authors. Please refer to the original publication and repository for the authoritative description, authorship, citation, and original results:
+
+- Original repository: <https://github.com/alexatartaglini/relational-circuits>
+- Original paper: [Beyond the Doors of Perception: Vision Transformers Represent Relations Between Objects](<ORIGINAL_PAPER_LINK>)
+
+This repository does not claim authorship of the original paper or implementation. It documents an engineering thesis project for the Civil Engineering in Computer Science degree at the University of Chile. The current work replicates the original experiments while varying **scale** instead of **color** as the object attribute under investigation.
+
+## Scope of This Work
+
+The experimental setup, implementation structure, and much of the surrounding code are inherited from the original repository. The principal change in this work is replacing the color-based experimental attribute with scale. For efficiency and convenience, some directory names, route names, command-line values, and related identifiers remain associated with `color`; however, the code operating on those paths and values uses **scale** in the current experiments. These names are retained for compatibility with the existing pipeline and should not be interpreted as indicating that color is the manipulated attribute here.
+
+Some experiment configurations are stored in the `.local_wand_sweep.json` file. This file is used for convenience and allow the experiments to be run without requiring Weights & Biases (`wandb`). The original repository and paper remain the source of attribution for the inherited methodology and implementation.
 
 ## Reproducibility
+
+The complete procedure required to reproduce the experiments reported in this work is documented in [`pipeline.md`](pipeline.md). It includes stimulus generation, model training, Distributed Alignment Search (DAS), linear-probing interventions, and result analysis.
+
 ### Data Generation
 `data.py` is used to generate training data for discrimination and RMTS tasks. Once these are generated, run `data.py --create_das` to generate DAS counterfactual datasets. Add `--match_to_sample` to generate RMTS counterfactual datasets.
 
 ### Model Training
-`sweep.py` is used to kick off model training. Add `--auxiliary_loss` to induce disentangled object representations.
+`train.py` is used to model training. Add `--auxiliary_loss` to induce disentangled object representations.
 
 ### Perceptual Stage 
 `das.py` runs DAS over all layers of a specified model to find a specified subspace. 
@@ -16,18 +31,14 @@ This repository contains the code and data necessary to reproduce the results in
 
 `linear_probe_intervention.py` trains linear probes over RMTS models and runs the additive intervention on them.
 
-For examples of calling these scripts, see the `CCV` directory.
+The commands and parameter tables in [`pipeline.md`](pipeline.md) should be treated as the primary replication guide for this work.
 
 ### Analyses
 Graphing files are found in `analysis`
 
 ## Dependencies
 
-This repository requires using our local copy of Pyvene, which is included here.  Additionally, you must use our fork of Transformer_lens, found here: `https://github.com/mlepori1/TransformerLens.git`.
+This repository requires the included local copy of Pyvene. Additionally, it uses the fork of TransformerLens specified by the original project: `https://github.com/mlepori1/TransformerLens.git`.
 
----
-
-### Otros
-
-Para la instalación del entorno virtual es importante recordar que las versiones a utilizar de cuda+torch son dependientes del hardware (GPU) a utilizar.
+When creating the virtual environment, select CUDA and PyTorch versions compatible with the available GPU hardware.
 
