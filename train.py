@@ -263,7 +263,10 @@ def compute_auxiliary_loss(
         states_1 = states_1.reshape((batch_size, num_patches, -1))
         states_2 = states_2.reshape((batch_size, num_patches, -1))
     
-    states = torch.cat((states_1, states_2), 1)
+    if probe_type == "cls":
+        states = torch.cat((states_1, states_2), 1)
+    else:
+        states = torch.cat((states_1, states_2), 0)
 
     # shape and color labels are maintained for each patch within an object
     shapes_1 = data["shape_1"].repeat_interleave(num_patches)
@@ -334,7 +337,6 @@ def compute_auxiliary_loss(
                     assert states.shape[0] == 16 * batch_size and states.shape[1] == 768
 
     if probe_type == "shape-color":
-        states = torch.cat((states_1, states_2), 0)
         # Run shape probe on half of the embedding, color probe on other half, ensures nonoverlapping subspaces
         shape_outs = shape_probe(states[:, :probe_dim])
         color_outs = color_probe(states[:, probe_dim:])
@@ -674,10 +676,11 @@ def evaluation(
     with torch.no_grad():
         running_loss_val = 0.0
         running_acc_val = 0.0
-        running_roc_auc = 0.0
         running_shape_acc_val = 0.0
         running_color_acc_val = 0.0
         running_obj_acc_val = 0.0
+        all_labels = []
+        all_scores = []
 
         for bi, (d, f) in enumerate(val_dataloader):
             inputs = d["pixel_values"].squeeze(1).to(device)
@@ -718,7 +721,9 @@ def evaluation(
 
             preds = output_logits.argmax(1)
             acc = accuracy_score(labels.to("cpu"), preds.to("cpu"))
-            roc_auc = roc_auc_score(labels.to("cpu"), output_logits.to("cpu")[:, -1])
+
+            all_labels.append(labels.detach().to("cpu"))
+            all_scores.append(output_logits.detach().to("cpu")[:, -1])
 
             if args.auxiliary_loss:
                 aux_loss, shape_acc, color_acc = compute_auxiliary_loss(
@@ -774,11 +779,13 @@ def evaluation(
 
             running_acc_val += acc * inputs.size(0)
             running_loss_val += loss.detach().item() * inputs.size(0)
-            running_roc_auc += roc_auc * inputs.size(0)
 
-        epoch_loss_val = running_loss_val / 6400  # len(val_dataset)
-        epoch_acc_val = running_acc_val / 6400  # len(val_dataset)
-        epoch_roc_auc = running_roc_auc / 6400  # len(val_dataset)
+        epoch_loss_val = running_loss_val / len(val_dataset)
+        epoch_acc_val = running_acc_val / len(val_dataset)
+        epoch_roc_auc = roc_auc_score(
+            torch.cat(all_labels).numpy(),
+            torch.cat(all_scores).numpy(),
+        )
 
         print()
         print("Val loss: {:.4f}".format(epoch_loss_val))
@@ -1210,23 +1217,45 @@ if __name__ == "__main__":
     # path = os.path.join(model_string, dataset_str)
 
     # Construct train set + DataLoader
+    base_data_root = os.path.join(
+        "stimuli",
+        dataset_str,
+        f"aligned/b{patch_size}/N_{obj_size}",
+    )
+
     if compositional > 0:
         args.n_train_tokens = compositional
         args.n_val_tokens = compositional
         args.n_test_tokens = 256 - compositional
 
-    if patch_size == 16:
-        patch_str = "/b16"
-    elif patch_size == 14:
-        patch_str = "/b14"
-    else:
-        patch_str = ""
+        # Prefer an existing generated directory for this compositional setup.
+        # This keeps compatibility when TOTAL_OBJECT_TOKENS changes (e.g., 64 -> 32-32-32).
+        inferred_comp_str = None
+        prefix = f"trainsize_{n_train}_{args.n_train_tokens}-{args.n_val_tokens}-"
+        if os.path.exists(base_data_root):
+            matches = [
+                d
+                for d in os.listdir(base_data_root)
+                if d.startswith(prefix)
+                and os.path.isdir(os.path.join(base_data_root, d))
+            ]
+            if len(matches) == 1:
+                inferred_comp_str = matches[0].split("trainsize_")[-1].split("_", 1)[1]
 
-    comp_str = f"{args.n_train_tokens}-{args.n_val_tokens}-{args.n_test_tokens}"
+        if inferred_comp_str is not None:
+            comp_str = inferred_comp_str
+            t_train, t_val, t_test = [int(x) for x in comp_str.split("-")]
+            args.n_train_tokens = t_train
+            args.n_val_tokens = t_val
+            args.n_test_tokens = t_test
+        else:
+            comp_str = f"{args.n_train_tokens}-{args.n_val_tokens}-{args.n_test_tokens}"
+    else:
+        comp_str = f"{args.n_train_tokens}-{args.n_val_tokens}-{args.n_test_tokens}"
+
     data_dir = os.path.join(
-        f"stimuli{patch_str}",
-        dataset_str,
-        f"aligned/N_{obj_size}/trainsize_{n_train}_{comp_str}",
+        base_data_root,
+        f"trainsize_{n_train}_{comp_str}",
     )
 
     if model_type == "vit":

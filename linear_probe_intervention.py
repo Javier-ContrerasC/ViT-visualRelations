@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch
 import argparse
 import os
+import glob
 from sklearn.metrics import accuracy_score
 import numpy as np
 import pandas as pd
@@ -467,9 +468,60 @@ if __name__ == "__main__":
     else:
         comp_str = f"{compositional}-{compositional}-{256-compositional}"
 
-    model_path = (
-        f"models/b{patch_size}/rmts/{pretrain}/mts_{obj_size}/{comp_str}_{run_id}.pth"
-    )
+    # Resolve model path with multiple candidate directories
+    task = "rmts"
+    ds = "mts"
+    
+    candidate_dirs = [
+        os.path.join(
+            "models",
+            f"b{patch_size}",
+            task,
+            pretrain,
+            f"{ds}_{obj_size}",
+        ),
+        os.path.join("models", pretrain, f"{ds}_{obj_size}"),
+    ]
+
+    run_id_stem = run_id[:-4] if run_id.endswith(".pth") else run_id
+    candidate_stems = [run_id_stem]
+    if not run_id_stem.startswith(f"{comp_str}_"):
+        candidate_stems.append(f"{comp_str}_{run_id_stem}")
+
+    model_path = None
+    candidates = []
+    for base_dir in candidate_dirs:
+        for stem in candidate_stems:
+            candidate = os.path.join(base_dir, f"{stem}.pth")
+            candidates.append(candidate)
+            if os.path.exists(candidate):
+                model_path = candidate
+                break
+        if model_path:
+            break
+    
+    # Fallback: search for any checkpoint containing the run_id
+    if not model_path:
+        matches = []
+        for base_dir in candidate_dirs:
+            matches.extend(glob.glob(os.path.join(base_dir, f"*{run_id_stem}*.pth")))
+        matches = list(dict.fromkeys(matches))  # Deduplicate
+        
+        if len(matches) == 1:
+            model_path = matches[0]
+        elif len(matches) > 1:
+            raise FileNotFoundError(
+                "Multiple checkpoints match run_id; pass a full path or a more specific run_id:\n"
+                + "\n".join(matches)
+            )
+        else:
+            attempted = "\n".join(candidates)
+            search_dirs = "\n".join(candidate_dirs)
+            raise FileNotFoundError(
+                f"Could not find checkpoint for run_id: {run_id}\n\n"
+                f"Attempted paths:\n{attempted}\n\n"
+                f"Search directories:  {search_dirs}"
+            )
     datapath = f"mts/aligned/b{patch_size}/N_{obj_size}/trainsize_6400_{comp_str}"
 
     model, transform = utils.load_model_from_path(
